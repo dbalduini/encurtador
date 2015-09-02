@@ -2,10 +2,14 @@ package url
 
 type repositorioMemoria struct {
     urls map[string]*Url
+    clicks map[string]int
 }
 
 func NovoRepositorioMemoria() *repositorioMemoria {
-    return &repositorioMemoria{make(map[string]*Url)}
+    return &repositorioMemoria{
+        make(map[string]*Url),
+        make(map[string]int),
+    }
 }
 
 func (r *repositorioMemoria) IdExiste(id string) bool {
@@ -30,3 +34,12 @@ func (r *repositorioMemoria) Salvar(url Url) error {
     r.urls[url.Id] = &url
     return nil
 }
+
+func (r *repositorioMemoria) RegistrarClick(id string) {
+    r.clicks[id] += 1
+}
+
+func (r *repositorioMemoria) BuscarClicks(id string) int {
+    return r.clicks[id]
+}
+
