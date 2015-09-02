@@ -3,21 +3,26 @@ package main
 import (
     "fmt"
     "log"
-    "net/http"
     "strings"
+    "flag"
+    "net/http"
     "github.com/dbalduini/encurtador/url"
     "encoding/json"
-    "log"
+
 )
 
 var (
-    porta int
+    porta *int
+    logLigado *bool
     urlBase string
 )
 
 func init() {
-    porta = 8888
-    urlBase = fmt.Sprintf("http://localhost:%d", porta)
+    porta = flag.Int("p", 8888, "porta")
+    logLigado = flag.Bool("l", true, "log ligado/desligado")
+    flag.Parse()
+
+    urlBase = fmt.Sprintf("http://localhost:%d", *porta)
 }
 
 type Headers map[string]string
@@ -113,11 +118,15 @@ func registrarEstatisticas(stats <-chan string) {
 }
 
 func logar(formato string, valores ...interface{}) {
-    log.Printf(fmt.Sprintf("%s\n", formato), valores...)
+    if *logLigado {
+        log.Printf(fmt.Sprintf("%s\n", formato), valores...)
+    }
 }
 
 func main() {
     url.SetRepositorio(url.NovoRepositorioMemoria())
+
+    p := *porta
 
     stats := make(chan string)
     defer close(stats)
@@ -127,7 +136,7 @@ func main() {
     http.HandleFunc("/api/stats/", Visualizador)
     http.Handle("/r/", &Redirecionador{stats})
 
-    logar("Iniciando servidor na porta %d...", porta)
+    logar("Iniciando servidor na porta %d...", p)
     log.Fatal(http.ListenAndServe(
-        fmt.Sprintf(":%d", porta), nil))
+        fmt.Sprintf(":%d", p), nil))
 }
