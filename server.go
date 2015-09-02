@@ -7,6 +7,7 @@ import (
     "strings"
     "github.com/dbalduini/encurtador/url"
     "encoding/json"
+    "log"
 )
 
 var (
@@ -104,10 +105,15 @@ func extrairUrl(r *http.Request) string {
 }
 
 func registrarEstatisticas(stats <-chan string) {
-    fmt.Println("Registering stats...")
+    logar("Registering stats...")
     for id := range stats {
         url.RegistrarClick(id)
+        logar("Click de log registrado para %s.", id)
     }
+}
+
+func logar(formato string, valores ...interface{}) {
+    log.Printf(fmt.Sprintf("%s\n", formato), valores...)
 }
 
 func main() {
@@ -121,6 +127,7 @@ func main() {
     http.HandleFunc("/api/stats/", Visualizador)
     http.Handle("/r/", &Redirecionador{stats})
 
+    logar("Iniciando servidor na porta %d...", porta)
     log.Fatal(http.ListenAndServe(
         fmt.Sprintf(":%d", porta), nil))
 }
