@@ -12,7 +12,6 @@ import (
 var (
     porta int
     urlBase string
-    stats chan string
 )
 
 func init() {
@@ -50,27 +49,25 @@ func Encurtador(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func Redirecionador(w http.ResponseWriter, r *http.Request) {
+type Redirecionador struct {
+    stats chan string
+}
+
+func (red *Redirecionador) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     caminho := strings.Split(r.URL.Path, "/")
     id := caminho[len(caminho)-1]
 
     if url := url.Buscar(id); url != nil {
-        http.Redirect(w, r, url.Destino, 
-            http.StatusMovedPermanently)
-        
-        fmt.Println("Putting id into stats")
-        stats <- id
-        fmt.Println("Done")
+        http.Redirect(w, r, url.Destino, http.StatusMovedPermanently)
+        red.stats <- id
     } else {
         http.NotFound(w, r)
     }
 }
 
 func Visualizador(w http.ResponseWriter, r *http.Request) {
-    fmt.Println("AQUI")
     caminho := strings.Split(r.URL.Path, "/")
     id := caminho[len(caminho)-1]
-    fmt.Println(id)
 
     if url := url.Buscar(id); url != nil {
         json, err := json.Marshal(url.Stats())
@@ -122,7 +119,7 @@ func main() {
 
     http.HandleFunc("/api/encurtar", Encurtador)
     http.HandleFunc("/api/stats/", Visualizador)
-    http.HandleFunc("/r/", Redirecionador)
+    http.Handle("/r/", &Redirecionador{stats})
 
     log.Fatal(http.ListenAndServe(
         fmt.Sprintf(":%d", porta), nil))
